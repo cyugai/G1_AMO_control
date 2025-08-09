@@ -1,0 +1,12 @@
+numpy==1.23.5
+mujoco==3.2.3
+mujoco-python-viewer==0.1.4
+glfw==2.9.0
+torch==2.3.1
+scipy
+websockets
+pyyaml
+pynput
+pygame
+mink
+catkin-pkg
