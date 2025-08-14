@@ -1,7 +1,13 @@
 <mujoco model="g1_29 scene">
   <include file="g1_29_2f85.xml"/>
- <option gravity="0 0 -9.81"/>
   <statistic center="0.3 0 0.4" extent="1"/>
+
+  <option timestep='0.001' iterations='50' solver='PGS' gravity='0 0 -9.81'>
+    </option>
+    <size njmax="500" nconmax="100" />
+  <default>
+    <joint type="hinge" frictionloss="0.2" damping="2"/>
+  </default>
 
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
@@ -21,15 +27,14 @@
 
   <worldbody>
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="table" type="box" size="0.38 0.6 0.01" mass="0.01" material="wood" pos="2.50 0 0.72" quat="1 0 0 0"/>
+  
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
-    <body name="Left_gripper_center_target" mocap="true" pos="0.38127486 0.15162665 0.88822298" quat="0.5 0.5 0.5 0.5">
-       <geom type="box" size=".04 .04 .04" contype="0" conaffinity="0" rgba=".6 .3 .3 .2"/>
-       <site type="sphere" size="0.01" rgba="0 0 1 1" group="1"/>
-    </body>
-    <body name="Right_gripper_center_target" mocap="true" pos="0.38127486 -0.15162665 0.88822298" quat="0.5 0.5 0.5 0.5">
-       <geom type="box" size=".04 .04 .04" contype="0" conaffinity="0" rgba=".3 .6 .3 .2"/>
-       <site type="sphere" size="0.01" rgba="1 0 0 1" group="1"/>
+    <body name="cube" pos="2.2 0.14 0.785" quat="1 0 0 0">
+      <joint name="cube_free" type="free" frictionloss="0" damping="0"/>
+      <geom name="cube_geom" type="box" size="0.02 0.02 0.05" friction=".9" mass="0.05" rgba="0 1 10 1"
+            solimp="0.87 0.95 0.004" solref="0.015 1" priority="1"/>
     </body>
   </worldbody>
 
@@ -40,7 +45,8 @@
                             -0.2 0 0 0.4 -0.2 0   
                             0 0 0   
                             0 0 0 0 0 0 0  0 0 0 0 0 0    
-                            0 0 0 0 0 0 0  0 0 0 0 0 0  
+                            0 0 0 0 0 0 0  0 0 0 0 0 0
+                            2.2 0.14 0.785 1 0 0 0
       '/>
   </keyframe>
 

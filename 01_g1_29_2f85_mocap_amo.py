@@ -23,8 +23,8 @@ import glfw
 from collections import deque
 import torch
 import mink
-from inculde.PID_controller import *
-from inculde.frame_transform import *
+from include.PID_controller import *
+from include.frame_transform import *
 from scipy.spatial.transform import Rotation as R
 
 multiplier = 5
@@ -118,7 +118,7 @@ class HumanoidEnv:
         
         if robot_type == "g1":
 
-            model_path = "assets/scene_g1_29_mocap.xml"
+            model_path = "assets/scene_g1_29_mocap_amo.xml"
             reduced_upper_model_path = "assets/g1_29_2f85_reduced.xml"
 
             self.stiffness = np.array([

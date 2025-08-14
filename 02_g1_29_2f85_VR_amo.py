@@ -28,8 +28,8 @@ import time
 import math
 import asyncio
 import threading
-from inculde.PID_controller import *
-from inculde.frame_transform import *
+from include.PID_controller import *
+from include.frame_transform import *
 from scipy.spatial.transform import Rotation as R
 from XLeVR.vr_monitor import VRMonitor
 
@@ -131,7 +131,7 @@ class HumanoidEnv:
         
         if robot_type == "g1":
 
-            model_path = "assets/scene_g1_29_VR.xml"
+            model_path = "assets/scene_g1_29_VR_amo.xml"
             reduced_upper_model_path = "assets/g1_29_2f85_reduced.xml"
 
             self.stiffness = np.array([
