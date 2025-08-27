@@ -553,7 +553,7 @@ class HumanoidEnv:
                         thumb_x1 = left_thumb.get('x', 0)
                         thumb_y1 = left_thumb.get('y', 0)
                         if abs(thumb_x1) > 0.1: 
-                            self.viewer.commands[1] += -thumb_x1*0.1 # vx
+                            self.viewer.commands[1] += -thumb_x1*0.1 # yaw
                         if abs(thumb_y1) > 0.7:
                             self.viewer.commands[3] += -thumb_y1*0.0001 # height
 

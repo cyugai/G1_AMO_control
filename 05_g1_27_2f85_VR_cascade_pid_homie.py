@@ -13,6 +13,15 @@ import mink
 from include.frame_transform import *
 from include.PID_controller import *
 import csv
+from XLeVR.vr_monitor import VRMonitor
+import asyncio
+import threading
+
+def vr_to_world(pos):
+    x = (pos[2]) * -1.0   # vr_scale_x
+    y = (pos[0]) * -1.0  # vr_scale_y
+    z = (pos[1]) * 1.0  # vr_scale_z
+    return np.array([x, y, z], dtype=np.float32)
 
 def load_config(config_path):
     """Load and process the YAML configuration file"""
@@ -216,7 +225,43 @@ def main():
                           ])
     pos_pid_controller, vel_pid_controller = create_homie_cascade_biarm_pid_controllers()
     mink_init = False
-    
+
+    # --- For gripper force control ---
+    left_arm_left_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "left_arm_left_pad_touch")
+    ]
+    left_arm_right_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "left_arm_right_pad_touch")
+    ]
+    right_arm_left_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "right_arm_left_pad_touch")
+    ]
+    right_arm_right_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "right_arm_right_pad_touch")
+    ]
+    left_gripper_left_follower_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "left_arm_left_follower_touch")
+    ]
+    left_gripper_right_follower_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "left_arm_right_follower_touch")
+    ]
+    right_gripper_left_follower_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "right_arm_left_follower_touch")
+    ]
+    right_gripper_right_follower_idx = m.sensor_adr[
+        mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "right_arm_right_follower_touch")
+    ]
+    left_gripper_val = 0
+    right_gripper_val = 0
+    left_gripper_pos = 0
+    right_gripper_pos = 0
+
+    # ---- VR Monitor ----
+    vr_monitor = VRMonitor()
+    _vr_thread = threading.Thread(
+        target=lambda: asyncio.run(vr_monitor.start_monitoring()),
+        daemon=True)
+    _vr_thread.start()
 
     
     with mujoco.viewer.launch_passive(m, d) as viewer:
@@ -233,10 +278,6 @@ def main():
             step_start = time.time()
 
 
-       
-            if start > 0.2 and not mink_init:
-                mink_init = True
-                print("Minkowski IK initialized successfully.")
         
             # Control leg joints with policy
             leg_tau = pd_control(
@@ -250,11 +291,71 @@ def main():
             
             d.ctrl[:config['num_actions']] = leg_tau
             
-            if mink_init:
 
-            # Keep other joints at zero positions if they exist
-            T_left = mink.SE3.from_mocap_name(m, d, "Left_gripper_center_target")
-            T_right = mink.SE3.from_mocap_name(m, d, "Right_gripper_center_target")
+            dual_goals  = vr_monitor.get_latest_goal_nowait()
+            left_goal   = dual_goals.get("left")  if dual_goals else None
+            right_goal  = dual_goals.get("right") if dual_goals else None
+            
+            if left_goal and left_goal.target_position is not None:
+                left_pos = vr_to_world(left_goal.target_position)
+                p = initial_left_target.wxyz_xyz[4:].copy() + left_pos
+                q_current = np.array([0.5, 0.5, 0.5, 0.5])
+                roll_arc = left_goal.wrist_pitch_deg / 360 * np.pi #y world
+                pitch_arc = -left_goal.wrist_yaw_deg / 360 * np.pi #z world
+                yaw_arc = left_goal.wrist_roll_deg / 360 * np.pi #x world
+
+                q_target = apply_wrist_rotation(q_current, 
+                                                roll_arc, pitch_arc, yaw_arc)
+                T_left  = mink.SE3.from_rotation_and_translation(
+                            mink.SO3(q_target), p)
+            
+                left_thumb = left_goal.metadata.get('thumbstick', {})
+                if left_thumb:
+                    thumb_x1 = left_thumb.get('x', 0)
+                    thumb_y1 = left_thumb.get('y', 0)
+                    if abs(thumb_x1) > 0.1: 
+                        cmd[2] += -thumb_x1*0.1 # yaw
+                    if abs(thumb_y1) > 0.7:
+                        height_cmd += -thumb_y1*0.0001 # height
+
+                if left_goal.metadata.get('trigger', 0) > 0.5:
+                    left_gripper_val = 2  # Close
+                else:
+                    left_gripper_val = -1
+
+
+            if right_goal and right_goal.target_position is not None:
+                right_pos = vr_to_world(right_goal.target_position)
+                p = initial_right_target.wxyz_xyz[4:].copy() + right_pos
+                q_current = np.array([0.5, 0.5, 0.5, 0.5])
+                roll_arc = right_goal.wrist_pitch_deg / 360 * np.pi #y world
+                pitch_arc = -right_goal.wrist_yaw_deg / 360 * np.pi #z world
+                yaw_arc = right_goal.wrist_roll_deg / 360 * np.pi #x world
+                q_target = apply_wrist_rotation(q_current, 
+                                                roll_arc, pitch_arc, yaw_arc)
+                T_right = mink.SE3.from_rotation_and_translation(
+                    mink.SO3(q_target), p)
+
+
+                right_thumb = right_goal.metadata.get('thumbstick', {})
+                if right_thumb:
+                    thumb_x1 = right_thumb.get('x', 0)
+                    thumb_y1 = right_thumb.get('y', 0)
+                    if abs(thumb_x1) > 0.1: 
+                        cmd[1] = -thumb_x1*0.4 # vy
+                    else:
+                        cmd[1] = 0.0
+                    if abs(thumb_y1) > 0.1:
+                        cmd[0] = -thumb_y1*0.5 # vx
+                    else:
+                        cmd[0] = 0.0
+
+                if right_goal.metadata.get('trigger', 0) > 0.5:
+                    right_gripper_val = 2  # Close
+                else:
+                    right_gripper_val = -1
+                    
+            
             T_left_target_position = T_left.wxyz_xyz[4:]
             T_left_target_wxyz = T_left.wxyz_xyz[:4]
             T_right_target_position = T_right.wxyz_xyz[4:]
@@ -304,7 +405,21 @@ def main():
             
        
             d.ctrl[12:-2] = arm_tau
-            d.ctrl[-2:] = 0.0  
+
+            left_gripper_pos += gripper_pid_combine(d,left_gripper_val, 
+                                           left_arm_left_idx,left_arm_right_idx,
+                                           left_gripper_left_follower_idx, left_gripper_right_follower_idx,
+                                           config['simulation_dt'])
+            right_gripper_pos += gripper_pid_combine(d,right_gripper_val, 
+                                            right_arm_left_idx,right_arm_right_idx,
+                                            right_gripper_left_follower_idx, right_gripper_right_follower_idx,
+                                            config['simulation_dt'])
+            ctrl_min, ctrl_max = [0,255]
+            left_gripper_pos = np.clip(left_gripper_pos, ctrl_min, ctrl_max)
+            right_gripper_pos = np.clip(right_gripper_pos, ctrl_min, ctrl_max)
+
+            d.ctrl[-2] = left_gripper_pos
+            d.ctrl[-1] = right_gripper_pos 
             # Step physics
             mujoco.mj_step(m, d)
             upper_data.qpos[:] = d.qpos[upper_dof_ids+6].copy() 
@@ -312,8 +427,6 @@ def main():
             upper_data.qacc[:] = d.qacc[upper_dof_ids+5].copy() 
             mujoco.mj_step(upper_model, upper_data)
 
-            # if time.time() - start > 2:
-            #     cmd = np.array([1, 0.0, 0.0], dtype=np.float32)
 
             counter += 1
             if counter % config['control_decimation'] == 0:
