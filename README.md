@@ -70,7 +70,7 @@ python 05_g1_27_2f85_VR_cascade_pid_homie.py
 ## Acknowledgements
 
 * [**AMO**](https://github.com/OpenTeleVision/AMO) — Adaptive Motion Optimization for Hyper-Dexterous Humanoid Whole-Body Control.
-* [**HOMIE**](https://github.com/InternRobotics/OpenHomie/tree/main)-Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit
+* [**HOMIE**](https://github.com/InternRobotics/OpenHomie/tree/main) — Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit
 * [**Mink**](https://github.com/kevinzakka/mink) — A library for differential inverse kinematics in Python, based on the MuJoCo physics engine.
 * [**XLeRobot**](https://github.com/Vector-Wangel/XLeRobot) — Bringing Embodied AI to every family around the world.
 
