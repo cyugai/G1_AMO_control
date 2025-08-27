@@ -1,6 +1,6 @@
 # G1 Whole-Body Teleoperation
 
-This repository provides two methods to control the **G1** humanoid robot (29 DOFs) using [AMO](https://github.com/OpenTeleVision/AMO/tree/main) in MuJoCo:
+This repository provides two methods to control the **G1** humanoid robot (29 DOFs) using [AMO](https://github.com/OpenTeleVision/AMO/tree/main)/[HOMIE](https://github.com/InternRobotics/OpenHomie/tree/main) in MuJoCo:
 
 1. **Upper body inverse kinematics** using [Mink](https://github.com/kevinzakka/mink).
 2. **VR teleoperation** using [XLeVR](https://github.com/Vector-Wangel/XLeRobot).
@@ -26,7 +26,12 @@ pip install -r requirements.txt
 From the project root directory:
 
 ```bash
+# AMO policy
 python 01_g1_29_2f85_mocap_amo.py
+
+# HOMIE policy
+python 03_g1_27_2f85_mocap_homie.py
+python 04_g1_27_2f85_mocap_cascade_pid_homie.py
 ```
 
 * You can now drag the mocap cube to control the movement of the G1's end-effector.
@@ -38,7 +43,11 @@ python 01_g1_29_2f85_mocap_amo.py
 From the project root directory:
 
 ```bash
+# AMO policy
 python 02_g1_29_2f85_VR_amo.py
+
+# HOMIE policy
+python 05_g1_27_2f85_VR_cascade_pid_homie.py
 ```
 
 * Open your VR headset browser and navigate to the HTTPS address shown in the terminal (e.g., `https://<your-ip>:8443`).
@@ -61,6 +70,7 @@ python 02_g1_29_2f85_VR_amo.py
 ## Acknowledgements
 
 * [**AMO**](https://github.com/OpenTeleVision/AMO) — Adaptive Motion Optimization for Hyper-Dexterous Humanoid Whole-Body Control.
+* [**HOMIE**](https://github.com/InternRobotics/OpenHomie/tree/main)-Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit
 * [**Mink**](https://github.com/kevinzakka/mink) — A library for differential inverse kinematics in Python, based on the MuJoCo physics engine.
 * [**XLeRobot**](https://github.com/Vector-Wangel/XLeRobot) — Bringing Embodied AI to every family around the world.
 
